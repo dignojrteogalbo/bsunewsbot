@@ -1,12 +1,15 @@
 {
     "main": "src/index.js",
     "scripts": {
-        "start": "node src/index.js"
+        "start": "node --max-http-header-size=40960 src/index.js"
     },
     "dependencies": {
         "@discordjs/builders": "^0.6.0",
         "@discordjs/rest": "^0.1.0-canary.0",
         "discord-api-types": "^0.23.1",
+        "discord.js": "^13.1.0",
+        "dotenv": "^10.0.0",
         "rss-to-json": "^2.0.2"
-    }
+    },
+    "packageManager": "yarn@3.0.2"
 }
