@@ -13,9 +13,9 @@ const newsCommand = new SlashCommandBuilder().setName('news').setDescription('Re
         option.setName('category')
             .setDescription('The news category')
             .setRequired(false)
-            .addChoice('Featured', 'tags/featured/')
-            .addChoice('News for the Campus Community', 'category/news-for-the-campus-community/')
-            .addChoice('Campus Life and Student Success', 'category/campus-life-and-student-success/'));
+            .addChoice('Featured', 'tag/featured')
+            .addChoice('News for the Campus Community', 'category/news-for-the-campus-community')
+            .addChoice('Campus Life and Student Success', 'category/campus-life-and-student-success'));
 
 const commands = [
     new SlashCommandBuilder().setName('ping').setDescription('Replies with pong!'),
