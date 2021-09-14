@@ -1,18 +1,19 @@
-const dotenv  = require('dotenv');
-const { Client, Intents, MessageEmbed } = require('discord.js');
-let Parser = require('rss-parser');
+import dotenv from 'dotenv';
+import { Client, Intents, MessageEmbed, MessageAttachment } from 'discord.js';
+import fetch from 'node-fetch';
+import { existsSync, createWriteStream } from 'fs';
+import md5 from 'md5';
+import Parser from 'rss-parser';
 let parser = new Parser();
-// const { parse: RSSParse } = require('rss-to-json');
-// const { decode } = require('html-entities');
-// const { parse: HTMLParse } = require('node-html-parser');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS ]});
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const RSS_URL = 'https://www.boisestate.edu/news/';
+const imagePath = 'attachment://DSC_5377-1.jpeg';
 
 dotenv.config();
 const token = process.env.TOKEN;
 
-function NewsEmbed({title, creator, info, link, categories, timestamp, image = null}) {
+function NewsEmbed({title, creator, info, link, categories, timestamp, imageName = null, imageURL = null}) {
     let embed = new MessageEmbed()
         .setTitle(title)
         .setAuthor(creator)
@@ -21,9 +22,13 @@ function NewsEmbed({title, creator, info, link, categories, timestamp, image = n
         .setFooter('Categories: ' + categories)
         .setTimestamp(timestamp);
 
-    if (image !== null) embed.setThumbnail(image);
+    if (imageURL !== null) {
+        let thumbnail = new MessageAttachment(`${imageName}`);
+        embed.setThumbnail(imageURL);
+        return { embeds: [embed], files: [thumbnail] };
+    }
 
-    return embed;
+    return { embeds: [embed] };
 }
 
 client.once('ready', () => {
@@ -64,16 +69,54 @@ client.on('interactionCreate', async interaction => {
                         const timestamp = Date.parse(feed.items[0].pubDate);
                         const parseImages = feed.items[0]['content:encoded'].match(/src\s*=\s*"(.+?)"/);
                         const imageURL = (parseImages === null) ? null : parseImages[1];
+                        let image = null;
+                        let imageName = null;
 
-                        interaction.reply({ embeds: [NewsEmbed({
-                            title: title,
-                            creator: creator,
-                            info: info,
-                            link: link,
-                            categories: categories,
-                            timestamp: timestamp,
-                            image: imageURL
-                        })] });
+                        if (imageURL !== null) {
+                            if (existsSync(`${md5(imageURL)}.jpg`)) {
+                                image = `attachment://${md5(imageURL)}.jpg`;
+                                imageName = `${md5(imageURL)}.jpg`;
+
+                                interaction.reply(NewsEmbed({
+                                    title: title,
+                                    creator: creator,
+                                    info: info,
+                                    link: link,
+                                    categories: categories,
+                                    timestamp: timestamp,
+                                    imageName: imageName,
+                                    imageURL: image
+                                }));
+                            } else {
+                                fetch(imageURL).then(res => {
+                                    const dest = createWriteStream(`${md5(imageURL)}.jpg`);
+                                    res.body.pipe(dest).on('finish', () => {
+                                        image = `attachment://${md5(imageURL)}.jpg`;
+                                        imageName = `${md5(imageURL)}.jpg`;
+
+                                        interaction.reply(NewsEmbed({
+                                            title: title,
+                                            creator: creator,
+                                            info: info,
+                                            link: link,
+                                            categories: categories,
+                                            timestamp: timestamp,
+                                            imageName: imageName,
+                                            imageURL: image
+                                        }))
+                                    })
+                                });
+                            }
+                        } else {
+                            interaction.reply(NewsEmbed({
+                                title: title,
+                                creator: creator,
+                                info: info,
+                                link: link,
+                                categories: categories,
+                                timestamp: timestamp,
+                            }));
+                        }
                     });
             })();
             
