@@ -4,6 +4,10 @@
     "scripts": {
         "start": "nodemon --max-http-header-size=40960 src/index.js"
     },
+    "engines": {
+        "node": "16.x",
+        "npm": "7.x"
+    },
     "dependencies": {
         "@discordjs/builders": "^0.6.0",
         "@discordjs/rest": "^0.1.0-canary.0",
