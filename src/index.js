@@ -8,7 +8,6 @@ let parser = new Parser();
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const RSS_URL = 'https://www.boisestate.edu/news/';
-const imagePath = 'attachment://DSC_5377-1.jpeg';
 
 dotenv.config();
 const token = process.env.TOKEN;
@@ -105,7 +104,7 @@ client.on('interactionCreate', async interaction => {
                                             imageURL: image
                                         }))
                                     })
-                                });
+                                }).catch(err => console.log(err));
                             }
                         } else {
                             interaction.reply(NewsEmbed({
