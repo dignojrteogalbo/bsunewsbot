@@ -2,7 +2,7 @@
     "main": "src/index.js",
     "type": "module",
     "scripts": {
-        "start": "nodemon -r dotenv/config --max-http-header-size=40960 src/index.js"
+        "start": "nodemon --max-http-header-size=40960 src/index.js"
     },
     "dependencies": {
         "@discordjs/builders": "^0.6.0",
