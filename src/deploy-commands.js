@@ -7,7 +7,6 @@ import { Routes } from 'discord-api-types/v9';
 const clientId = process.env.CLIENTID;
 const token = process.env.TOKEN;
 const guildId = "596320306835095554"; // Test Server
-// const guildId = "882725373459181589"; // BSU CS Students
 
 const newsCommand = new SlashCommandBuilder().setName('news').setDescription('Replies with the latest news story')
     .addStringOption(option =>
@@ -51,7 +50,8 @@ const rest = new REST({ version: '9' }).setToken(token);
 (async () => {
     try {
         await rest.put(
-            Routes.applicationGuildCommands(clientId, guildId),
+            // Routes.applicationGuildCommands(clientId, guildId), // register commands in development server
+            Routes.applicationCommands(clientId), // register commands globally
             { body: commands },
         );
 

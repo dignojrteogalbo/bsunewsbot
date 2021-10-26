@@ -1,8 +1,6 @@
 import dotenv from 'dotenv';
 import { Client, Intents, MessageEmbed, MessageAttachment } from 'discord.js';
 import fetch from 'node-fetch';
-import { existsSync, createWriteStream } from 'fs';
-import md5 from 'md5';
 import Parser from 'rss-parser';
 let parser = new Parser();
 
@@ -12,9 +10,11 @@ const RSS_URL = 'https://www.boisestate.edu/news/';
 dotenv.config();
 const token = process.env.TOKEN;
 
-function NewsEmbed({title, creator, info, link, categories, timestamp, imageName = null, imageURL = null}) {
+async function NewsEmbed({title, creator, info, link, categories, timestamp, imageURL = null}) {
+    let thumbnail = null;
     let embed = new MessageEmbed()
         .setTitle(title)
+        .setColor(0xD64309)
         .setAuthor(creator)
         .setDescription(info)
         .setURL(link)
@@ -22,12 +22,16 @@ function NewsEmbed({title, creator, info, link, categories, timestamp, imageName
         .setTimestamp(timestamp);
 
     if (imageURL !== null) {
-        let thumbnail = new MessageAttachment(`${imageName}`);
-        embed.setThumbnail(imageURL);
-        return { embeds: [embed], files: [thumbnail] };
+        await fetch(imageURL)
+            .then(res => res.buffer())
+            .then(buffer => {
+                thumbnail = new MessageAttachment(buffer, "image.jpg");     // GENIUS WORK AROUND
+                embed.setThumbnail("attachment://image.jpg");               // UPLOAD IMAGE AS IMAGE BUFFER
+            });
+        return new Promise(resolve => resolve({ embeds: [embed], files: [thumbnail] }));
     }
 
-    return { embeds: [embed] };
+    return new Promise(resolve => resolve({ embeds: [embed] }));
 }
 
 function RateEmbed(name, rating, content = null) {
@@ -42,19 +46,19 @@ function RateEmbed(name, rating, content = null) {
 
     switch (rating) {
         case 1:
-            embed.setDescription('⭐️');
+            embed.setDescription('1 ⭐️');
             break;
         case 2:
-            embed.setDescription('⭐️⭐️');
+            embed.setDescription('2 ⭐️⭐️');
             break;
         case 3:
-            embed.setDescription('⭐️⭐️⭐️');
+            embed.setDescription('3 ⭐️⭐️⭐️');
             break;
         case 4:
-            embed.setDescription('⭐️⭐️⭐️⭐️');
+            embed.setDescription('4 ⭐️⭐️⭐️⭐️');
             break;
         case 5:
-            embed.setDescription('⭐️⭐️⭐️⭐️⭐️');
+            embed.setDescription('5 ⭐️⭐️⭐️⭐️⭐️');
             break;
     }
 
@@ -88,7 +92,7 @@ client.on('interactionCreate', async interaction => {
             let option = interaction.options.getString('category') ?? '';
             (async () => {
                 await parser.parseURL(RSS_URL + option + '/feed')
-                    .then(feed => {
+                    .then(async (feed) => {
                         const title = feed.items[0].title;
                         const creator = feed.items[0].creator;
                         const link = feed.items[0].link;
@@ -97,46 +101,19 @@ client.on('interactionCreate', async interaction => {
                         const timestamp = Date.parse(feed.items[0].pubDate);
                         const parseImages = feed.items[0]['content:encoded'].match(/src\s*=\s*"(.+?)"/);
                         const imageURL = (parseImages === null) ? null : parseImages[1];
-                        let image = null;
-                        let imageName = null;
 
                         if (imageURL !== null) {
-                            if (existsSync(`${md5(imageURL)}.jpg`)) {
-                                image = `attachment://${md5(imageURL)}.jpg`;
-                                imageName = `${md5(imageURL)}.jpg`;
-
-                                interaction.reply(NewsEmbed({
-                                    title: title,
-                                    creator: creator,
-                                    info: info,
-                                    link: link,
-                                    categories: categories,
-                                    timestamp: timestamp,
-                                    imageName: imageName,
-                                    imageURL: image
-                                }));
-                            } else {
-                                fetch(imageURL).then(res => {
-                                    const dest = createWriteStream(`${md5(imageURL)}.jpg`);
-                                    res.body.pipe(dest).on('finish', () => {
-                                        image = `attachment://${md5(imageURL)}.jpg`;
-                                        imageName = `${md5(imageURL)}.jpg`;
-
-                                        interaction.reply(NewsEmbed({
-                                            title: title,
-                                            creator: creator,
-                                            info: info,
-                                            link: link,
-                                            categories: categories,
-                                            timestamp: timestamp,
-                                            imageName: imageName,
-                                            imageURL: image
-                                        }))
-                                    })
-                                }).catch(err => console.log(err));
-                            }
+                            await interaction.reply(await NewsEmbed({
+                                title: title,
+                                creator: creator,
+                                info: info,
+                                link: link,
+                                categories: categories,
+                                timestamp: timestamp,
+                                imageURL: imageURL
+                            }));
                         } else {
-                            interaction.reply(NewsEmbed({
+                            await interaction.reply(await NewsEmbed({
                                 title: title,
                                 creator: creator,
                                 info: info,
