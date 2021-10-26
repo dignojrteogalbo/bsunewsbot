@@ -25,8 +25,8 @@ async function NewsEmbed({title, creator, info, link, categories, timestamp, ima
         await fetch(imageURL)
             .then(res => res.buffer())
             .then(buffer => {
-                thumbnail = new MessageAttachment(buffer, "image.jpg");     // GENIUS WORK AROUND
-                embed.setThumbnail("attachment://image.jpg");               // UPLOAD IMAGE AS IMAGE BUFFER
+                thumbnail = new MessageAttachment(buffer, 'image.jpg');     // GENIUS WORK AROUND
+                embed.setThumbnail('attachment://image.jpg');               // UPLOAD IMAGE AS IMAGE BUFFER
             });
         return new Promise(resolve => resolve({ embeds: [embed], files: [thumbnail] }));
     }
@@ -44,23 +44,7 @@ function RateEmbed(name, rating, content = null) {
         embed.addFields({ name: 'Message: ', value: content, inline: false });
     }
 
-    switch (rating) {
-        case 1:
-            embed.setDescription('1 ⭐️');
-            break;
-        case 2:
-            embed.setDescription('2 ⭐️⭐️');
-            break;
-        case 3:
-            embed.setDescription('3 ⭐️⭐️⭐️');
-            break;
-        case 4:
-            embed.setDescription('4 ⭐️⭐️⭐️⭐️');
-            break;
-        case 5:
-            embed.setDescription('5 ⭐️⭐️⭐️⭐️⭐️');
-            break;
-    }
+    embed.setDescription(`${rating} ` +'⭐️'.repeat(rating));
 
     return { embeds: [embed] };
 }
@@ -85,7 +69,6 @@ client.on('interactionCreate', async interaction => {
 
         case 'user':
             await interaction.reply(`Your tag: ${interaction.user.tag}\nYour id: ${interaction.user.id}`);
-
             break;
 
         case 'news':
@@ -102,26 +85,15 @@ client.on('interactionCreate', async interaction => {
                         const parseImages = feed.items[0]['content:encoded'].match(/src\s*=\s*"(.+?)"/);
                         const imageURL = (parseImages === null) ? null : parseImages[1];
 
-                        if (imageURL !== null) {
-                            await interaction.reply(await NewsEmbed({
-                                title: title,
-                                creator: creator,
-                                info: info,
-                                link: link,
-                                categories: categories,
-                                timestamp: timestamp,
-                                imageURL: imageURL
-                            }));
-                        } else {
-                            await interaction.reply(await NewsEmbed({
-                                title: title,
-                                creator: creator,
-                                info: info,
-                                link: link,
-                                categories: categories,
-                                timestamp: timestamp,
-                            }));
-                        }
+                        await interaction.reply(await NewsEmbed({
+                            title: title,
+                            creator: creator,
+                            info: info,
+                            link: link,
+                            categories: categories,
+                            timestamp: timestamp,
+                            imageURL: imageURL
+                        }));
                     }).catch(err => console.log(err));
             })();
             
